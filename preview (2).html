@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Pro App</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  color: white;
+  text-align: center;
+  height: 100vh;
+  overflow: hidden;
+  transition: 0.5s;
+}
+
+/* Themes */
+.clear { background: linear-gradient(#4facfe, #00f2fe); }
+.rain { background: #2c3e50; }
+.thunder { background: #0f2027; }
+.clouds { background: #757f9a; }
+
+/* Glass UI */
+.container {
+  position: relative;
+  top: 30%;
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 15px;
+}
+
+/* Rain */
+.rain-drop {
+  position: absolute;
+  width: 2px;
+  height: 15px;
+  background: white;
+  animation: rain 0.6s linear infinite;
+}
+@keyframes rain {
+  to { transform: translateY(100vh); }
+}
+
+/* Lightning */
+.lightning {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: white;
+  opacity: 0;
+  animation: flash 2s infinite;
+}
+@keyframes flash {
+  0%, 95%, 100% { opacity: 0; }
+  96% { opacity: 0.9; }
+}
+
+/* Sun */
+.sun {
+  width: 120px;
+  height: 120px;
+  background: yellow;
+  border-radius: 50%;
+  margin: auto;
+  animation: rotate 8s linear infinite;
+}
+@keyframes rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* Clouds */
+.cloud {
+  width: 150px;
+  height: 60px;
+  background: #fff;
+  border-radius: 50px;
+  position: absolute;
+  top: 20%;
+  animation: move 20s linear infinite;
+}
+@keyframes move {
+  from { left: -200px; }
+  to { left: 100%; }
+}
+</style>
+</head>
+
+<body class="clear">
+
+<div class="container">
+  <h1 id="location">Loading...</h1>
+  <h2 id="temp"></h2>
+  <h3 id="desc"></h3>
+</div>
+
+<div id="animation"></div>
+
+<script>
+const apiKey = "33518b769723e4faa2cdeeb345283af3";
+
+function getWeather(lat, lon) {
+  fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.cod !== 200) throw new Error();
+
+      document.getElementById("location").innerText = data.name;
+      document.getElementById("temp").innerText = data.main.temp + "°C";
+      document.getElementById("desc").innerText = data.weather[0].main;
+
+      changeAnimation(data.weather[0].main.toLowerCase());
+    })
+    .catch(() => {
+      document.getElementById("location").innerText = "Error ❌";
+      document.getElementById("desc").innerText = "API / Internet Issue";
+    });
+}
+
+/* Location + fallback */
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    pos => getWeather(pos.coords.latitude, pos.coords.longitude),
+    () => getWeather(28.6139, 77.2090)
+  );
+} else {
+  getWeather(28.6139, 77.2090);
+}
+
+/* Animations */
+function changeAnimation(weather) {
+  const body = document.body;
+  const anim = document.getElementById("animation");
+  anim.innerHTML = "";
+
+  if (weather.includes("rain")) {
+    body.className = "rain";
+    for (let i = 0; i < 120; i++) {
+      let drop = document.createElement("div");
+      drop.className = "rain-drop";
+      drop.style.left = Math.random() * 100 + "vw";
+      anim.appendChild(drop);
+    }
+
+  } else if (weather.includes("thunder")) {
+    body.className = "thunder";
+    let flash = document.createElement("div");
+    flash.className = "lightning";
+    anim.appendChild(flash);
+
+  } else if (weather.includes("cloud")) {
+    body.className = "clouds";
+    let cloud = document.createElement("div");
+    cloud.className = "cloud";
+    anim.appendChild(cloud);
+
+  } else {
+    body.className = "clear";
+    let sun = document.createElement("div");
+    sun.className = "sun";
+    anim.appendChild(sun);
+  }
+}
+</script>
+
+</body>
+</html>
